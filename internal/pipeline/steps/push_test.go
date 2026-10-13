@@ -439,6 +439,47 @@ func TestPushStep_CatchAllCommitSubject(t *testing.T) {
 	}
 }
 
+func TestPushStep_CatchAllCommitSubjectRenderFailureDoesNotMutateGit(t *testing.T) {
+	upstream := t.TempDir()
+	gitCmd(t, upstream, "init", "--bare")
+	dir, baseSHA, headSHA := setupGitRepo(t)
+	gitCmd(t, dir, "remote", "add", "origin", upstream)
+	leftover := filepath.Join(dir, "leftover.txt")
+	if err := os.WriteFile(leftover, []byte("still uncommitted\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sctx := newTestContextWithDBRecords(t, &mockAgent{name: "test"}, dir, baseSHA, headSHA, config.Commands{})
+	sctx.Repo.UpstreamURL = upstream
+	sctx.Run.Branch = "refs/heads/feature"
+	sctx.Config.Commit = config.Commit{
+		FixMessage:    "chore({{.Branch}}): {{.Summary}}",
+		BranchPattern: `^PROJ/([0-9]+)$`,
+	}
+	setupGateMirror(t, sctx)
+	recordReviewApproval(t, sctx, headSHA)
+
+	_, err := (&PushStep{}).Execute(sctx)
+	if err == nil || !strings.Contains(err.Error(), "commit.branch_pattern did not find an identifier") {
+		t.Fatalf("PushStep.Execute() error = %v, want branch-pattern render error", err)
+	}
+	if got := gitCmd(t, dir, "diff", "--cached", "--name-only"); got != "" {
+		t.Fatalf("render failure staged files: %q", got)
+	}
+	if got := gitCmd(t, dir, "rev-parse", "HEAD"); got != headSHA {
+		t.Fatalf("render failure moved HEAD from %s to %s", headSHA, got)
+	}
+	if got := gitStatusPorcelain(t, dir); got != "?? leftover.txt" {
+		t.Fatalf("leftover change was not preserved uncommitted: %q", got)
+	}
+	if got, err := os.ReadFile(leftover); err != nil || string(got) != "still uncommitted\n" {
+		t.Fatalf("leftover change = %q, %v; want original uncommitted content", got, err)
+	}
+	if refs := gitCmd(t, upstream, "for-each-ref", "--format=%(refname)"); refs != "" {
+		t.Fatalf("render failure changed remote refs: %q", refs)
+	}
+}
+
 func TestPushStep_TargetsForkWhenConfigured(t *testing.T) {
 	parent := t.TempDir()
 	fork := t.TempDir()
