@@ -106,8 +106,8 @@ The combined document-and-lint housekeeping pass runs in the Document step, so i
 Before a step-specific fix commit, the pipeline verifies that the live worktree HEAD still descends from the head recorded after its previous commit.
 It allows a legitimate forward commit made by an agent, but aborts the run if an out-of-band backward or divergent reset would drop the reviewed history.
 
-The template does not control commits created by the Rebase or Push steps.
-The Push step uses `no-mistakes: apply agent fixes` for remaining uncommitted changes.
+The template does not control commits created by the Rebase step.
+The Push step commits remaining uncommitted changes as `no-mistakes: apply agent fixes`, or through `commit.fix_message` (step `push`, summary `apply agent fixes`) when that is set to anything other than the default.
 Repositories can opt into [`protected_paths`](/no-mistakes/reference/repo-config/#protected_paths) to refuse automatic staging when a protected file is dirty, including at this Push catch-all boundary. Refusal preserves the edits for inspection.
 
 ## Step rounds

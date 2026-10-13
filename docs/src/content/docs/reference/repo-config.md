@@ -963,7 +963,7 @@ Override the auto-fix commit subject template for this repository.
 
 The value follows the [global `commit.fix_message` template syntax and validation rules](/no-mistakes/reference/global-config/#commitfix_message).
 That includes the 1,024-byte template limit, 16-placeholder limit, 4,096-byte summary and rendered-subject limits, and rejection of bidi and invisible Unicode format characters.
-The setting applies to the Review, Test, Document, Lint, and CI repair paths, plus operator-authorized repository gate repairs. It does not apply to commits created by the Rebase or Push steps.
+The setting applies to the Review, Test, Document, Lint, and CI repair paths, plus operator-authorized repository gate repairs. When set to anything other than the default, it also renders the Push step's catch-all commit (`{{.Step}}` is `push`, `{{.Summary}}` is `apply agent fixes`). It does not apply to commits created by the Rebase step or to evidence-branch commits.
 
 This non-executing field is read from the pushed branch, so a branch can adopt its own commit-subject convention without enabling `allow_repo_commands`.
 To apply a machine-local convention without adding it to the repository, see global [`repository_overrides`](/no-mistakes/reference/global-config/#repository_overrides).
@@ -1087,6 +1087,7 @@ Fields not set here inherit from global config and then the built-in defaults.
 | `test.evidence.attach_media` | `bool` | Inherits from global (default `true`) |
 | `test.evidence.dir` | `string` | Inherits from global (default `.no-mistakes/evidence`) |
 | `test.evidence.branch` | `string` | Inherits from global (default `no-mistakes/evidence`) |
+| `test.evidence.commit_message` | `string` | Inherits from global (default `no-mistakes: evidence for {{.Branch}} (run {{.RunID}})`) |
 
 By default, test evidence is written to `<NM_HOME>/evidence/<run-id>`. Where it is stored locally and how long it is kept are global-only settings; see [`test.evidence`](/no-mistakes/reference/global-config/#testevidence).
 On GitHub.com/GHEC, supported image and video artifacts are uploaded to GitHub user-attachments when the PR is rendered unless `attach_media` is false and `store_in_repo` is also false.

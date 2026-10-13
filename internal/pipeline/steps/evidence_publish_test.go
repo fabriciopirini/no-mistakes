@@ -178,6 +178,31 @@ func TestPublishRunEvidence_UsesTheConfiguredBranchName(t *testing.T) {
 	}
 }
 
+func TestPublishRunEvidence_CommitSubject(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, template, want string
+	}{
+		{"default", "", "no-mistakes: evidence for feature/add-login (run %s)"},
+		{"configured", "chore(evidence): {{.Branch}} {{.RunID}}", "chore(evidence): feature/add-login %s"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			sctx, remote := newEvidencePublishContext(t, "feature/add-login")
+			sctx.Config.Test.Evidence.CommitMessage = tc.template
+			writeRunEvidence(t, sctx, map[string]string{"cli-run.txt": "it works\n"})
+
+			if links := publishRunEvidence(sctx); links == nil {
+				t.Fatal("expected evidence to be published")
+			}
+			got := gitCmd(t, remote, "log", "-1", "--format=%s", "refs/heads/no-mistakes/evidence")
+			if want := fmt.Sprintf(tc.want, sctx.Run.ID); got != want {
+				t.Fatalf("evidence commit subject = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
 func TestPublishRunEvidence_InvalidBranchNameFallsBackToLocalPaths(t *testing.T) {
 	t.Parallel()
 	sctx, remote := newEvidencePublishContext(t, "feature/add-login")

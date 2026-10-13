@@ -406,6 +406,39 @@ func TestPushStep_DoesNotPublishTestEvidenceIntoThePushedBranch(t *testing.T) {
 	}
 }
 
+func TestPushStep_CatchAllCommitSubject(t *testing.T) {
+	for _, tc := range []struct {
+		name, template, want string
+	}{
+		{"default", config.DefaultFixMessageTemplate, "no-mistakes: apply agent fixes"},
+		{"configured", "chore({{.Step}}): {{.Summary}} [{{.Branch}}]", "chore(push): apply agent fixes [feature]"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			upstream := t.TempDir()
+			gitCmd(t, upstream, "init", "--bare")
+			dir, baseSHA, headSHA := setupGitRepo(t)
+			gitCmd(t, dir, "remote", "add", "origin", upstream)
+			if err := os.WriteFile(filepath.Join(dir, "leftover.txt"), []byte("formatted\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			sctx := newTestContextWithDBRecords(t, &mockAgent{name: "test"}, dir, baseSHA, headSHA, config.Commands{})
+			sctx.Repo.UpstreamURL = upstream
+			sctx.Run.Branch = "refs/heads/feature"
+			sctx.Config.Commit.FixMessage = tc.template
+			setupGateMirror(t, sctx)
+			recordReviewApproval(t, sctx, headSHA)
+
+			if _, err := (&PushStep{}).Execute(sctx); err != nil {
+				t.Fatal(err)
+			}
+			if got := gitCmd(t, upstream, "log", "-1", "--format=%s", "refs/heads/feature"); got != tc.want {
+				t.Fatalf("catch-all commit subject = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestPushStep_TargetsForkWhenConfigured(t *testing.T) {
 	parent := t.TempDir()
 	fork := t.TempDir()
