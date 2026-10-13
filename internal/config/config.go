@@ -3103,7 +3103,7 @@ func EffectiveRepoConfig(pushed, trusted *RepoConfig, allowRepoCommands bool) *R
 		// test.evidence.branch names the git ref evidence commits are pushed
 		// to with the maintainer's credentials. It is trusted-only so a pushed
 		// branch cannot aim them at another branch of the repository; the rest
-		// of test.evidence (store_in_repo, attach_media, dir) stays
+		// of test.evidence (store_in_repo, attach_media, dir, commit_message) stays
 		// pushed-readable because it only picks how artifacts are published.
 		// The publisher independently refuses any branch without its marker
 		// file, and the upload client refuses Actions/App installation tokens,

@@ -107,7 +107,7 @@ Before a step-specific fix commit, the pipeline verifies that the live worktree 
 It allows a legitimate forward commit made by an agent, but aborts the run if an out-of-band backward or divergent reset would drop the reviewed history.
 
 The template does not control commits created by the Rebase step.
-The Push step commits remaining uncommitted changes as `no-mistakes: apply agent fixes`, or through `commit.fix_message` (step `push`, summary `apply agent fixes`) when that is set to anything other than the default.
+The Push step's catch-all commit can also use a non-default `commit.fix_message`; the [global config reference](/no-mistakes/reference/global-config/#commitfix_message) owns its rendering details.
 Repositories can opt into [`protected_paths`](/no-mistakes/reference/repo-config/#protected_paths) to refuse automatic staging when a protected file is dirty, including at this Push catch-all boundary. Refusal preserves the edits for inspection.
 
 ## Step rounds

@@ -117,6 +117,7 @@ test:
     attach_media: true
     dir: .no-mistakes/evidence
     branch: no-mistakes/evidence
+    commit_message: "no-mistakes: evidence for {{.Branch}} (run {{.RunID}})"
     retention: 336h
     max_runs: 200
 
@@ -1040,7 +1041,7 @@ The template supports literal text and three Go-style placeholders:
 
 | Variable | Value |
 | --- | --- |
-| `{{.Step}}` | Pipeline step name, such as `review`, `test`, `document`, `lint`, `ci`, or `gate.test.mutation-budget` |
+| `{{.Step}}` | Pipeline step name, such as `review`, `test`, `document`, `lint`, `ci`, `push`, or `gate.test.mutation-budget` |
 | `{{.Summary}}` | Sanitized one-line summary returned by the fix agent, or the step's deterministic fallback summary |
 | `{{.Branch}}` | Normalized branch name, or the identifier captured and optionally transformed by [`commit.branch_pattern`](#commitbranch_pattern) and [`commit.branch_replacement`](#commitbranch_replacement) |
 
