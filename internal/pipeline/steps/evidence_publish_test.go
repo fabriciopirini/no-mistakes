@@ -226,7 +226,10 @@ func TestPublishRunEvidence_RejectsCommitSubjectInvalidForTheRun(t *testing.T) {
 				t.Fatalf("template must pass config-load validation: %v", err)
 			}
 
-			sctx, remote := newEvidencePublishContext(t, tc.branch)
+			// Keep the fixture's checked-out ref short enough for Windows. The
+			// runtime branch value is the input whose expansion this test covers.
+			sctx, remote := newEvidencePublishContext(t, "feature/runtime-subject")
+			sctx.Run.Branch = tc.branch
 			sctx.Config.Test.Evidence.CommitMessage = *loaded.Test.Evidence.CommitMessage
 			writeRunEvidence(t, sctx, map[string]string{"cli-run.txt": "it works\n"})
 
