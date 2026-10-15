@@ -1199,7 +1199,7 @@ repository_overrides:
 
 `review.path_instructions` behaves like the [global list](#reviewpath_instructions): its rules render in their own labeled section after the global rules and before the repository's trusted rules, and they count toward the same combined limits.
 `document.instructions` is added to the document step's prompt in a labeled section before the repository's trusted [`document.instructions`](/no-mistakes/reference/repo-config/#documentinstructions), and like that field it augments the built-in placement policy and cannot weaken it.
-`test.instructions` is added to the Test step's evidence prompt in a labeled section before the repository's trusted [`test.instructions`](/no-mistakes/reference/repo-config/#testinstructions) runbook.
+`test.instructions` is added to the Test step's repair and evidence prompts in a labeled section before the repository's trusted [`test.instructions`](/no-mistakes/reference/repo-config/#testinstructions) runbook.
 All three are additive only: the repository's trusted values still apply in full, and a pushed branch can supply none of them.
 Under `review` only `path_instructions` is accepted, under `document` only `instructions`, and under `test` only `instructions`; settings that could weaken a gate, such as `no_ci`, `allow_repo_commands`, or `pr.base_branch`, are not accepted here.
 Changes apply to the next run, and to a run recovered after a daemon restart, which re-reads this file.

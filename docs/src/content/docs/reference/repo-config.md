@@ -1061,7 +1061,7 @@ Repository-specific runbook for standing the product up during live validation.
 | Type | `string` (multiline) |
 | Default | Empty |
 
-The Test step injects these instructions into its evidence prompt so the agent can start and drive the real product the way an end user would.
+The Test step injects these instructions into its repair and evidence prompts so each agent can start and drive the real product the way an end user would.
 Like `document.instructions`, this field steers its own gate, so it is honored **only from the trusted default-branch copy** of `.no-mistakes.yaml`, regardless of `allow_repo_commands`. A contributor's pushed branch cannot rewrite the runbook that validates that branch.
 
 An operator can add their own runbook for this repository through a machine-local [`repository_overrides`](/no-mistakes/reference/global-config/#machine-local-review-documentation-and-test-guidance) entry; it is rendered as a separate, labeled section before this field's and never replaces it.

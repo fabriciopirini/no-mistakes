@@ -80,7 +80,7 @@ Context:
 - branch: %s
 - base commit: %s
 - target commit: %s
-
+%s
 Rules:
 - Make the smallest correct root-cause fix.
 - Do not refactor beyond what is needed for that root-cause fix.
@@ -98,6 +98,7 @@ Rules:
 			sctx.Run.Branch,
 			baseSHA,
 			sctx.Run.HeadSHA,
+			testRunbookSections(sctx),
 			historySection,
 		)
 		if repair := testRepairFindings(sctx.PreviousFindings); repair != "" {
@@ -227,7 +228,7 @@ Previous test findings to address:
 	if declaration := commandOverrideDeclaration("test", sctx.Config.CommandOverrides["test"]); declaration != "" && len(baselineResults) > 0 {
 		configuredTestCommand += fmt.Sprintf("Baseline ran with %s. Declare these overrides in testing_summary.\n", declaration)
 	}
-	runbook := repositoryTestInstructionsSection(sctx) + trustedTestInstructionsSection(sctx) + budgetCutGuidanceSection(sctx)
+	runbook := testRunbookSections(sctx) + budgetCutGuidanceSection(sctx)
 	fallbackGuidance := `- Never treat "do not run everything" as permission to run nothing: if no existing check drives a scenario, write or improve a focused test, perform manual verification with evidence, or report a warning finding that sufficient targeted evidence is not possible.
 - If sufficient evidence is not possible, report a warning finding explaining what evidence is missing and why the user needs to decide what to do. When the blocker is a host capability or OS permission the agent's own process lacks (for example, the Screen Recording permission macOS requires to capture a native GUI application), name the specific capability or permission and how to grant it so the user can enable it and re-run, instead of retrying blindly or failing opaquely.`
 	if sctx.Run.VerificationPlan != nil {
@@ -454,6 +455,12 @@ Validation errors:
 	}
 	b.WriteString("\n")
 	return b.String()
+}
+
+// testRunbookSections renders the machine-local runbook ahead of the trusted
+// one, for both the repair and the evidence prompt.
+func testRunbookSections(sctx *pipeline.StepContext) string {
+	return repositoryTestInstructionsSection(sctx) + trustedTestInstructionsSection(sctx)
 }
 
 func trustedTestInstructionsSection(sctx *pipeline.StepContext) string {
