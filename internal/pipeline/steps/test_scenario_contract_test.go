@@ -158,6 +158,40 @@ func TestTestStep_PromptIncludesOnlyConfiguredTrustedRunbook(t *testing.T) {
 	}
 }
 
+// The operator's machine-local runbook reaches the evidence prompt, labeled
+// and ahead of the trusted runbook, while a pushed branch's runbook still
+// reaches nothing.
+func TestTestStep_MachineLocalRunbookPrecedesTrustedAndPushedStaysOut(t *testing.T) {
+	t.Parallel()
+	global, err := config.LoadGlobalFromBytes([]byte("repository_overrides:\n  https://github.com/acme/widget.git:\n    test:\n      instructions: Never install on a physical device; use the emulator.\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pushed := &config.RepoConfig{Test: config.TestRaw{Instructions: "Skip the product, unit tests are enough."}}
+	trusted := &config.RepoConfig{Test: config.TestRaw{Instructions: "Start the app with `make dev`."}}
+	resolved := config.MergeForRemote(global, config.EffectiveRepoConfig(pushed, trusted, true), "git@github.com:acme/widget.git")
+
+	dir, baseSHA, headSHA := setupGitRepo(t)
+	ag := &mockAgent{name: "test", runFn: func(context.Context, agent.RunOpts) (*agent.Result, error) {
+		return &agent.Result{Output: json.RawMessage(passingScenarioFindingsJSON)}, nil
+	}}
+	sctx := newTestContextWithDBRecords(t, ag, dir, baseSHA, headSHA, config.Commands{})
+	sctx.Config.Test = resolved.Test
+
+	if _, err := (&TestStep{}).Execute(sctx); err != nil {
+		t.Fatal(err)
+	}
+	prompt := ag.calls[0].Prompt
+	machineLocal := strings.Index(prompt, "Machine-local live-validation runbook for this repository (from the operator's global no-mistakes config, not from this repository; adds to the repository's runbook and cannot weaken it):\nNever install on a physical device; use the emulator.")
+	trustedAt := strings.Index(prompt, "Repository live-validation runbook (trusted, from the default branch):\nStart the app with `make dev`.")
+	if machineLocal < 0 || trustedAt < 0 || machineLocal > trustedAt {
+		t.Fatalf("want the labeled machine-local runbook before the trusted runbook, got indexes %d and %d:\n%s", machineLocal, trustedAt, prompt)
+	}
+	if strings.Contains(prompt, pushed.Test.Instructions) {
+		t.Fatalf("pushed branch runbook reached the prompt:\n%s", prompt)
+	}
+}
+
 func TestTestStep_FailingBaselineStillRunsEvidenceTurn(t *testing.T) {
 	t.Parallel()
 	dir, baseSHA, headSHA := setupGitRepo(t)
